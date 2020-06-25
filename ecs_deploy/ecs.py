@@ -90,37 +90,28 @@ class EcsClient(object):
                  launchtype='EC2', subnets=(), security_groups=(),
                  public_ip=False):
 
-        if launchtype == LAUNCH_TYPE_FARGATE:
-            if not subnets or not security_groups:
-                msg = 'At least one subnet (--subnet) and one security ' \
-                      'group (--securitygroup) definition are required ' \
-                      'for launch type FARGATE'
-                raise TaskPlacementError(msg)
+        if launchtype == LAUNCH_TYPE_FARGATE and (not subnets or not security_groups):
+            msg = 'At least one subnet (--subnet) and one security ' \
+                  'group (--securitygroup) definition are required ' \
+                  'for launch type FARGATE'
+            raise TaskPlacementError(msg)
 
-            network_configuration = {
-                "awsvpcConfiguration": {
-                    "subnets": subnets,
-                    "securityGroups": security_groups,
-                    "assignPublicIp": "ENABLED" if public_ip else "DISABLED"
-                }
+        network_configuration = {
+            "awsvpcConfiguration": {
+                "subnets": subnets,
+                "securityGroups": security_groups,
+                "assignPublicIp": "ENABLED" if public_ip else "DISABLED"
             }
-
-            return self.boto.run_task(
-                cluster=cluster,
-                taskDefinition=task_definition,
-                count=count,
-                startedBy=started_by,
-                overrides=overrides,
-                launchType=launchtype,
-                networkConfiguration=network_configuration
-            )
+        }
 
         return self.boto.run_task(
             cluster=cluster,
             taskDefinition=task_definition,
             count=count,
             startedBy=started_by,
-            overrides=overrides
+            overrides=overrides,
+            launchType=launchtype,
+            networkConfiguration=network_configuration
         )
 
     def update_rule(self, cluster, rule, task_definition):
